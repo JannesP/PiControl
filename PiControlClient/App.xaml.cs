@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using PiControlClient.Extensions;
+using PiControlClient.Logging;
 using PiControlClient.Resources;
+using PiControlClient.UI.Windows;
 using PiControlClient.Utility;
 
 namespace PiControlClient
@@ -11,6 +13,7 @@ namespace PiControlClient
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
+    // ReSharper disable once RedundantExtendsListEntry
     public partial class App : Application
     {
         private TrayIconManager? _trayIconManager;
@@ -18,12 +21,13 @@ namespace PiControlClient
         
         protected override void OnStartup(StartupEventArgs e)
         {
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += OnCurrentDomainUnhandledException;
             this.DispatcherUnhandledException += OnDispatcherUnhandledException;
             
+            var _ = ConsoleEventListener.Instance;
             ApplicationEventSource.Log.Startup();
             this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            _singleProcessManager = new SingleProcessManager("com_jannes_peters_PiControlWpfClient", true);
+            _singleProcessManager = new SingleProcessManager("com_jannes_peters_PiControlWpfClient");
             if (!_singleProcessManager.IsFirstInstance)
             {
                 ApplicationEventSource.Log.NotFirstInstance();
@@ -58,7 +62,7 @@ namespace PiControlClient
         private void OnSecondInstanceStarted(object? sender, EventArgs e)
         {
             ApplicationEventSource.Log.SecondInstanceStarted();
-            this.ShowCreateMainWindow<MainWindow>();
+            this.Dispatcher.Invoke(this.ShowCreateMainWindow<MainWindow>);
         }
 
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -67,7 +71,7 @@ namespace PiControlClient
             Cleanup();
         }
         
-        private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void OnCurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Exception ex = (Exception)e.ExceptionObject;
             ApplicationEventSource.Log.FatalException(ex);
@@ -85,6 +89,7 @@ namespace PiControlClient
             _trayIconManager?.SafeDispose();
             _singleProcessManager?.SafeDispose();
             ApplicationEventSource.Log.SafeDispose();
+            ConsoleEventListener.Instance.SafeDispose();
         }
         
     }

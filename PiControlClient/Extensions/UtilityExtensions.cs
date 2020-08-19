@@ -1,4 +1,5 @@
 ﻿using System;
+using PiControlClient.Logging;
 using PiControlClient.Utility;
 
 namespace PiControlClient.Extensions

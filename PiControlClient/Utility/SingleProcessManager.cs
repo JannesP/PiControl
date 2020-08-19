@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using PiControlClient.Extensions;
+using PiControlClient.Logging;
 
 namespace PiControlClient.Utility
 {
@@ -94,7 +95,14 @@ namespace PiControlClient.Utility
         
         private void OnSecondInstanceStarted()
         {
-            SecondInstanceStarted?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                SecondInstanceStarted?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                ApplicationEventSource.Log.FatalException(ex);
+            }
         }
 
         /// <summary>
